@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 type Post = {
   id: string;
@@ -35,6 +36,7 @@ export default function Home() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editText, setEditText] = useState('');
   const [editFile, setEditFile] = useState<File | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [includeLocation, setIncludeLocation] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -502,7 +504,12 @@ export default function Home() {
                   />
                 )}
                 {post.imageUrl && (
-                  <img src={post.imageUrl} alt="Uploaded" className="max-w-full rounded-md object-cover max-h-96" />
+                  <img 
+                    src={post.imageUrl} 
+                    alt="Uploaded" 
+                    className="max-w-full rounded-md object-cover max-h-96 cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => setSelectedImage(post.imageUrl as string)}
+                  />
                 )}
                 {post.location && (
                   <div className="mt-2">
@@ -544,6 +551,28 @@ export default function Home() {
           <p className="text-center text-gray-500 py-10">No posts yet. Be the first to share a thought!</p>
         )}
       </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
+            <button
+              className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 bg-black/50 rounded-full transition-colors"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X size={24} />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Full screen"
+              className="max-w-full max-h-full object-contain rounded-md"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
