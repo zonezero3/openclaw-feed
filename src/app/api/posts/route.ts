@@ -1,10 +1,11 @@
 import { Firestore } from '@google-cloud/firestore';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
 const firestore = new Firestore();
-const collectionName = 'posts';
+const collectionName = process.env.POSTS_COLLECTION || 'posts';
 
 export async function GET() {
   try {
@@ -22,9 +23,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { text, imageUrl } = await req.json();
+    const { text, imageUrl, location } = await req.json();
 
-    // XSS 방어를 위한 텍스트 이스케이핑 및 줄바꿈 처리
     const escapedText = text
       ? text.replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
@@ -38,9 +38,11 @@ export async function POST(req: Request) {
     const newPost = {
       text: escapedText,
       imageUrl: imageUrl || null,
+      location: location || null,
       createdAt: new Date().toISOString(),
     };
     await postRef.set(newPost);
+    revalidatePath('/');
 
     return NextResponse.json({ id: postRef.id, ...newPost });
   } catch (error: any) {

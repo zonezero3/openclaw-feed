@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const firestore = new Firestore();
 const storage = new Storage();
-const collectionName = 'posts';
+const collectionName = process.env.POSTS_COLLECTION || 'posts';
 const bucketName = process.env.BUCKET_NAME || '';
 
 function extractFilenameFromUrl(url: string) {

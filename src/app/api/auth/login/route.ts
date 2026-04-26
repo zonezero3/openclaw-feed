@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { encrypt } from '@/lib/session';
+import { getAdminPasswordHash, verifyPassword } from '@/lib/password';
 
-// For simple brute force protection: store IP failed attempts in memory.
-// In production (Cloud Run), memory resets per instance, but it adds basic delay.
 const failedAttempts = new Map<string, { count: number; lastTime: number }>();
 
 export async function POST(req: Request) {
@@ -17,16 +16,24 @@ export async function POST(req: Request) {
 
   try {
     const { password } = await req.json();
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const storedHash = await getAdminPasswordHash();
+    let isValid = false;
 
-    if (!adminPassword || password !== adminPassword) {
-      // Simulate delay for brute force protection
+    if (storedHash) {
+      isValid = await verifyPassword(password, storedHash);
+    } else {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (adminPassword && password === adminPassword) {
+        isValid = true;
+      }
+    }
+
+    if (!isValid) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       failedAttempts.set(ip, { count: record.count + 1, lastTime: now });
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
-    // Success
     failedAttempts.delete(ip);
     
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
